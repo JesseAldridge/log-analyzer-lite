@@ -66,7 +66,7 @@ for i in range(0, len(lines), skip):
       max_hour_str = dt_hourly_str
   for regex in sorted(regexes, key=lambda s: -len(s)):
     start_time = time.time()
-    match = re.search(regex, after_timestamp)
+    match = re.match(regex, after_timestamp)
     end_time = time.time()
     regex_to_time.setdefault(regex, 0)
     regex_to_time[regex] += end_time - start_time
@@ -77,6 +77,9 @@ for i in range(0, len(lines), skip):
       all_regex_matches.setdefault(regex, [])
       all_regex_matches[regex].append(after_timestamp)
       break
+  else:
+    # TODO: every line should be matched
+    print 'unmatched:', after_timestamp
 
 
 # Build hourly range of datetimes.  Handle initial null timestamps.
@@ -113,5 +116,6 @@ static_path = os.path.expanduser('~/Desktop/static')
 if not os.path.exists(static_path):
   shutil.copytree('stuff/static', static_path)
 
+# print 'slow regexes:'
 # for regex, time in sorted(regex_to_time.iteritems(), key=lambda t: -t[1])[:10]:
 #   print time, regex

@@ -15,9 +15,8 @@ def build_line_groups(lines, skip=None):
   line_groups = {}
   for line_index in range(0, len(lines), skip if skip else 1):
     if line_index % 100 == 0:
-      print 'line:', lines[line_index]
-      # print 'line_index: {}'.format(line_index)
-      # print 'line_groups: {}'.format(len(line_groups))
+      print 'line_index: {}/{}'.format(line_index, len(lines))
+      print 'line_groups: {}'.format(len(line_groups))
     full_line = lines[line_index]
     full_line = full_line.strip('\n')
     if re.search('^(([0-9]{4}\-)|null )', full_line):

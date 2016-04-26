@@ -3,7 +3,7 @@ import sys, os, re, difflib, glob
 
 def strings_to_regex(string_list):
   if len(string_list) == 1:
-    return regex_escape(string_list[0])
+    return regex_escape(string_list[0]).strip()
 
   # Tokenize and get diff opcodes for each of them.
 
@@ -63,6 +63,7 @@ def strings_to_regex(string_list):
   for _ in range(10):
     regex = regex.replace('.*? .*?', '.*?')
     regex = regex.replace('.*?.*?', '.*?')
+    regex = re.sub('\.\*\?$', '', regex)
 
   if regex == '.*?':
     sys.stderr.write('whatever regex\n')
