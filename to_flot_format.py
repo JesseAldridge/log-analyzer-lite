@@ -3,6 +3,8 @@ import sys, json, re, time, os, shutil
 from datetime import timedelta
 from dateutil import parser
 
+import string_to_regex
+
 '''
 Read list of regexes from the passed file.
 Read piped in timestamped lines.
@@ -66,7 +68,7 @@ for i in range(0, len(lines), skip):
       max_hour_str = dt_hourly_str
   for regex in sorted(regexes, key=lambda s: -len(s)):
     start_time = time.time()
-    match = re.match(regex, after_timestamp)
+    match = re.search(regex, after_timestamp)
     end_time = time.time()
     regex_to_time.setdefault(regex, 0)
     regex_to_time[regex] += end_time - start_time
@@ -80,6 +82,9 @@ for i in range(0, len(lines), skip):
   else:
     # TODO: every line should be matched
     print 'unmatched:', after_timestamp
+    print
+    print 'auto regex:', string_to_regex.string_to_regex(after_timestamp)
+    break
 
 
 # Build hourly range of datetimes.  Handle initial null timestamps.
