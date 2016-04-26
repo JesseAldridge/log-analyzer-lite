@@ -1,6 +1,10 @@
-import sys, os, re, difflib
+#!/usr/bin/python
+import sys, os, re, difflib, glob
 
 def strings_to_regex(string_list):
+  if len(string_list) == 1:
+    return string_list[0]
+
   # Tokenize and get diff opcodes for each of them.
 
   key_str = string_list[0]
@@ -72,12 +76,19 @@ def strings_to_regex(string_list):
 
   return regex
 
-def main(path, num_chars_to_skip):
-  with open(path) as f:
-    text = f.read()
-  lines = [line[num_chars_to_skip:] for line in text.splitlines()]
-  print strings_to_regex(lines)
+def main():
+  regexes = []
+  for path in glob.glob(os.path.expanduser('~/Desktop/line_groups/*.txt')):
+    with open(path) as f:
+      text = f.read()
+    regex = strings_to_regex(text.splitlines())
+    regexes.append(regex)
+    print 'filename:', os.path.basename(path)
+    print 'regex:', regex
+    print
+
+  with open(os.path.expanduser('~/Desktop/regexes.txt'), 'w') as f:
+    f.write('\n'.join(regexes))
 
 if __name__ == '__main__':
-  main(sys.argv[1], int(sys.argv[2]))
-
+  main()
