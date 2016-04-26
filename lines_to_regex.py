@@ -3,7 +3,7 @@ import sys, os, re, difflib, glob
 
 def strings_to_regex(string_list):
   if len(string_list) == 1:
-    return string_list[0]
+    return regex_escape(string_list[0])
 
   # Tokenize and get diff opcodes for each of them.
 
@@ -38,20 +38,15 @@ def strings_to_regex(string_list):
       if list_of_codes[i] and list_of_codes[i][0][1] == min_start:
         list_of_codes[i] = list_of_codes[i][1:]
 
-  # print 'merged_codes:', merged_codes
-
   # Fix any overlap.
   for i in range(1, len(merged_codes)):
     # ['equal', 6, 8, 7, 9], ['insert', 7, 7, 7, 8]
     if merged_codes[i][1] < merged_codes[i - 1][2]:
       merged_codes[i - 1][2] = merged_codes[i][1]
 
-  # print 'fixed overlap:', merged_codes
-
   # Escape regex chars.
   for i in range(len(key_tokens)):
-    for ch in '()[]*+':
-      key_tokens[i] = key_tokens[i].replace(ch, '\\' + ch)
+    key_tokens[i] = regex_escape(key_tokens[i])
 
   # Turn merged codes into regex.
 
@@ -65,16 +60,22 @@ def strings_to_regex(string_list):
       regex_tokens.append('.*?')
 
   regex = ''.join(regex_tokens)
-  # while re.search('\.\*\? *\.\*\?', regex):
-  #     regex = re.sub('\.\*\? *\.\*\?', '.*?', regex)
+  for _ in range(10):
+    regex = regex.replace('.*? .*?', '.*?')
+    regex = regex.replace('.*?.*?', '.*?')
 
   if regex == '.*?':
-    print 'whatever regex'
-    print '    key:', key_str
+    sys.stderr.write('whatever regex\n')
+    sys.stderr.write('    key: {}\n'.format(key_str))
     for str_ in string_list:
-      print '  other:', str_
+      sys.stderr.write('  other: {}\n'.format(str_))
 
-  return regex
+  return regex.strip()
+
+def regex_escape(s):
+  for ch in '\\()[]{}*+-^$?.|/':
+    s = s.replace(ch, '\\' + ch)
+  return s
 
 def main():
   regexes = []
@@ -83,12 +84,13 @@ def main():
       text = f.read()
     regex = strings_to_regex(text.splitlines())
     regexes.append(regex)
-    print 'filename:', os.path.basename(path)
-    print 'regex:', regex
-    print
+  print '\n'.join(regexes)
 
-  with open(os.path.expanduser('~/Desktop/regexes.txt'), 'w') as f:
-    f.write('\n'.join(regexes))
+def test():
+  print strings_to_regex(['foo$ $1', 'foo$ $2'])
 
 if __name__ == '__main__':
-  main()
+  if len(sys.argv) == 2:
+    test()
+  else:
+    main()

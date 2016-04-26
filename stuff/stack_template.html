@@ -1,0 +1,81 @@
+<script language="javascript" type="text/javascript" src="{{static}}lib/jquery.min.js"></script>
+<script language="javascript" type="text/javascript" src="{{static}}lib/jquery.flot.js"></script>
+<script language="javascript" type="text/javascript" src="{{static}}lib/jquery.flot.stack.js"></script>
+
+<div id="placeholder" style="width:1000px;height:450px;"></div>
+<div id="legendholder"></div>
+<div>Time taken: {{time_taken}}</div>
+
+<script id="source">
+$(function () {
+    var original_data = {{layers}}
+
+    // Parse date strings.
+
+    for(var ilayer = 0; ilayer < original_data.length; ilayer++) {
+      var layer_data = original_data[ilayer].data
+      for(var ipair = 0; ipair < layer_data.length; ipair++)
+        layer_data[ipair][0] = Date.parse(layer_data[ipair][0])
+    }
+
+    function plotByChoice(plot_all) {
+
+        // Give empty data to unchecked layers.  Parse date strings.
+
+        var data = []
+        for(var ilayer = 0; ilayer < original_data.length; ilayer++) {
+          checkbox = $('#checkbox{0}'.replace('{0}', ilayer))
+          if(!plot_all && checkbox.is(':checked') == false) {
+            data.push({label:original_data[ilayer].label, data:[]})
+            for(var i = 0; i < original_data[ilayer].data.length; i++)
+              data[ilayer].data.push([original_data[ilayer].data[i][0], 0])
+          }
+          else
+            data.push(original_data[ilayer])
+        }
+
+        // Plot the stack graph with timestamp labels.
+
+        var label_count = 0;
+        $.plot($("#placeholder"), data, {
+            series: {
+                stack: true,
+                lines: { show: true, fill: 1, steps: true },
+            },
+            xaxis: {
+                mode: "time",
+                timeformat: "%m/%d %H:%M",
+            },
+
+            // Add checkboxes to labels in the legend.
+
+            legend: { show: true, container: '#legendholder',
+              labelFormatter: 
+                function (label, series) {
+                  var cb = '<input class="legendCB" type="checkbox" ';
+                  any_non_zero = false
+                  for(var i = 0; i < series.data.length; i++)
+                    if(series.data[i][1] > 0) {
+                      any_non_zero = true
+                      break
+                    }
+                  if (any_non_zero)
+                      cb += 'checked="true" ';
+                  cb += 'id="checkbox{0}" /> '.replace('{0}', label_count);
+                  cb += label;      
+                  label_count += 1;
+                  return cb;
+                }
+            }        
+        });
+      
+        $('#legendholder').find("input").click(function(){
+          setTimeout(plotByChoice,100);
+        });
+
+    }
+
+    plotByChoice(true);
+
+});
+</script>

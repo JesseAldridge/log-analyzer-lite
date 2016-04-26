@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, json, re
+import sys, json, re, time, os, shutil
 from datetime import timedelta
 from dateutil import parser
 
@@ -8,8 +8,8 @@ Read list of regexes from the passed file.
 Read piped in timestamped lines.
 For each line, add the line to the matching layer.
 Dump the layers to an html file that will use flot to render the graph.
- ___      
-|foo|___ 
+ ___
+|foo|___
 |___|foo|
 |bar|___|
 |   |bar|
@@ -37,12 +37,21 @@ flot_data = [
 with open(sys.argv[1]) as f:
   regexes = f.read().splitlines()
 
+with open(sys.argv[2]) as f:
+  lines = f.read().splitlines()
+
+regex_to_time = {}
+
 # Map each regex to lists of matching lines grouped by hour.
 layer_map = {}
 all_regex_matches = {}
 min_hour_str, max_hour_str = None, None
 dt_str = None
-for line in sys.stdin:
+skip = int(sys.argv[3]) if len(sys.argv) == 4 else 1
+for i in range(0, len(lines), skip):
+  if i % 100 == 0:
+    print '{:<4}/{:<4}'.format(i, len(lines))
+  line = lines[i]
   line = line.strip('\n')
   prev_dt_str = dt_str
   dt_str, after_timestamp = line.split(' ', 1)
@@ -56,13 +65,19 @@ for line in sys.stdin:
     if max_hour_str is None or dt_hourly_str > max_hour_str:
       max_hour_str = dt_hourly_str
   for regex in sorted(regexes, key=lambda s: -len(s)):
-    if re.search(regex, line):
+    start_time = time.time()
+    match = re.search(regex, after_timestamp)
+    end_time = time.time()
+    regex_to_time.setdefault(regex, 0)
+    regex_to_time[regex] += end_time - start_time
+    if match:
       layer_map.setdefault(regex, {})
       layer_map[regex].setdefault(dt_hourly_str, [])
       layer_map[regex][dt_hourly_str].append(after_timestamp)
       all_regex_matches.setdefault(regex, [])
       all_regex_matches[regex].append(after_timestamp)
       break
+
 
 # Build hourly range of datetimes.  Handle initial null timestamps.
 hourly_dts = [None]
@@ -92,5 +107,11 @@ flot_layers.sort(key=lambda layer: -len(all_regex_matches[layer['label']]))
 layers_json = json.dumps(flot_layers, indent=2)
 template_str = template_str.replace('{{layers}}', layers_json)
 template_str = template_str.replace('{{static}}', static_dir)
-with open('stuff/stack.html', 'w') as f:
+with open(os.path.expanduser('~/Desktop/out.html'), 'w') as f:
   f.write(template_str)
+static_path = os.path.expanduser('~/Desktop/static')
+if not os.path.exists(static_path):
+  shutil.copytree('stuff/static', static_path)
+
+# for regex, time in sorted(regex_to_time.iteritems(), key=lambda t: -t[1])[:10]:
+#   print time, regex
