@@ -84,12 +84,12 @@ def main(path=None):
   print 'splitting...'
   lines = text.splitlines()
   print 'processing...'
-  with open(os.path.expanduser('~/Desktop/foo.txt'), 'w') as f:
+  with open(os.path.expanduser('~/Desktop/norm.txt'), 'w') as f:
     for i, line in enumerate(lines):
       if i % 10000 == 0:
         print '{:.2f}%'.format(100 * i / float(len(lines)))
       dt_str, after_timestamp = normalize_timestamp(line)
-      f.write(' '.join((dt_str or 'null', after_timestamp.rstrip('\n'))))
+      f.write(' '.join((dt_str or 'null', after_timestamp.rstrip('\n'))) + '\n')
 
 if __name__ == '__main__':
   if len(sys.argv) == 1:
